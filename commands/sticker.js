@@ -2,7 +2,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const settings = require('../../settings');
+const settings = require('../settings');
 const webp = require('node-webpmux');
 const crypto = require('crypto');
 
