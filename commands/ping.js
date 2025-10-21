@@ -1,5 +1,5 @@
 const os = require('os');
-const settings = require('../../settings.js');
+const settings = require('../settings.js');
 
 function formatTime(seconds) {
     const days = Math.floor(seconds / (24 * 60 * 60));
