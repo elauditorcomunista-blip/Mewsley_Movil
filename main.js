@@ -1,4 +1,4 @@
-const settings = require('../settings.js');
+const settings = require('./settings.js');
 require('./config.js');
 const { isBanned } = require('./lib/isBanned');
 const yts = require('yt-search');
