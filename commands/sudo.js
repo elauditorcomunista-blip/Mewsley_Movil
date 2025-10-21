@@ -1,4 +1,4 @@
-const settings = require('../../settings');
+const settings = require('../settings');
 const { addSudo, removeSudo, getSudoList } = require('../lib/index');
 
 function extractMentionedJid(message) {
