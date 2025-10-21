@@ -9,7 +9,7 @@
  * - Baileys Library by @adiwajshing
  * - Pair Code implementation inspired by TechGod143 & DGXEON
  */
-require('../settings')
+require('./settings')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const chalk = require('chalk')
@@ -50,7 +50,7 @@ const store = require('./lib/lightweight_store')
 
 // Initialize store
 store.readFromFile()
-const settings = require('../settings')
+const settings = require('./settings')
 setInterval(() => store.writeToFile(), settings.storeWriteInterval || 10000)
 
 // Memory optimization - Force garbage collection if available
