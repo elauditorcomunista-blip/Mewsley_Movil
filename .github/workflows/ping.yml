@@ -1,0 +1,13 @@
+name: Keep Bot Alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # cada 10 minutos
+  workflow_dispatch: # también permite correr manualmente
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render bot
+        run: curl -s https://mewley-mobil.onrender.com/ > /dev/null
