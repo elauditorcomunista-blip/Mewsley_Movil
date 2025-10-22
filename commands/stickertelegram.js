@@ -7,7 +7,7 @@ const sharp = require('sharp');
 const webp = require('node-webpmux');
 const crypto = require('crypto');
 const { exec } = require('child_process');
-const settings = require('../../settings');
+const settings = require('../settings');
 
 async function stickerTelegramCommand(sock, chatId, msg) {
     try {
