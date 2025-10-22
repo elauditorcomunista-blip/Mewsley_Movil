@@ -189,3 +189,18 @@ fs.watchFile(file, () => {
     delete require.cache[file]
     require(file)
 })
+
+// index.js
+const http = require('http');
+
+// Simula un servidor web que Render pueda detectar
+http.createServer((req, res) => {
+  res.write("Bot activo en Render");
+  res.end();
+}).listen(process.env.PORT || 3000, () => {
+  console.log("Servidor ficticio activo en puerto", process.env.PORT || 3000);
+});
+
+// Tu código del bot debajo
+require('./main.js');
+
