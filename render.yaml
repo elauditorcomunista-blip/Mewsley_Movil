@@ -1,0 +1,7 @@
+services:
+  - type: worker
+    name: knightbot-md
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
