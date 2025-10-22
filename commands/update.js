@@ -2,7 +2,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const settings = require('../../settings');
+const settings = require('../settings');
 
 function run(cmd) {
     return new Promise((resolve, reject) => {
