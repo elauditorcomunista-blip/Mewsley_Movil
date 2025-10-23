@@ -75,19 +75,7 @@ global.themeemoji = "•";
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 
 
-// ===============================
-// ⚠️ OPCIÓN 1: ELIMINAR CARPETA "session" AUTOMÁTICAMENTE AL INICIO
-// ===============================
-(() => {
-  const sessionPath = './session';
-  if (fs.existsSync(sessionPath)) {
-    fs.rmSync(sessionPath, { recursive: true, force: true });
-    console.log('🗑️ Carpeta "session" eliminada automáticamente (Opción 1 activa)');
-  }
-})();
-// ===============================
-// ⚠️ FIN OPCIÓN 1
-// ===============================
+
 
 
 // ===============================
