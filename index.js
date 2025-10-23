@@ -33,12 +33,12 @@ const PhoneNumber = require('awesome-phonenumber');
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif');
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetch, await, sleep, reSize } = require('./lib/myfunc');
 const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    fetchLatestBaileysVersion,
-    jidDecode,
-    jidNormalizedUser,
-    makeCacheableSignalKeyStore,
+  default: makeWASocket,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  jidDecode,
+  jidNormalizedUser,
+  makeCacheableSignalKeyStore,
 } = require("@whiskeysockets/baileys");
 const NodeCache = require("node-cache");
 const pino = require("pino");
@@ -53,15 +53,15 @@ setInterval(() => store.writeToFile(), settings.storeWriteInterval || 10000);
 
 // 🧹 Mantenimiento de memoria
 setInterval(() => {
-    if (global.gc) global.gc();
+  if (global.gc) global.gc();
 }, 60_000);
 
 setInterval(() => {
-    const used = process.memoryUsage().rss / 1024 / 1024;
-    if (used > 400) {
-        console.log('⚠️ RAM demasiado alta, reiniciando...');
-        process.exit(1);
-    }
+  const used = process.memoryUsage().rss / 1024 / 1024;
+  if (used > 400) {
+    console.log('⚠️ RAM demasiado alta, reiniciando...');
+    process.exit(1);
+  }
 }, 30_000);
 
 // ===============================
@@ -94,111 +94,105 @@ const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 // 🚀 Función principal del bot
 // ===============================
 async function startXeonBotInc() {
-    let { version } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState(`./session`);
-    const msgRetryCounterCache = new NodeCache();
+  let { version } = await fetchLatestBaileysVersion();
+  const { state, saveCreds } = await useMultiFileAuthState(`./session`);
+  const msgRetryCounterCache = new NodeCache();
 
-    const XeonBotInc = makeWASocket({
-        version,
-        logger: pino({ level: 'silent' }),
-        printQRInTerminal: false, // 👈 Desactivamos el QR de Baileys
-        browser: ["Ubuntu", "Chrome", "20.0.04"],
-        auth: {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-        },
-        markOnlineOnConnect: true,
-        generateHighQualityLinkPreview: true,
-        syncFullHistory: true,
-        getMessage: async (key) => {
-            let jid = jidNormalizedUser(key.remoteJid);
-            let msg = await store.loadMessage(jid, key.id);
-            return msg?.message || "";
-        },
-        msgRetryCounterCache,
-        defaultQueryTimeoutMs: undefined,
-    });
+  const XeonBotInc = makeWASocket({
+    version,
+    logger: pino({ level: 'silent' }),
+    printQRInTerminal: false,
+    browser: ["Ubuntu", "Chrome", "20.0.04"],
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+    },
+    markOnlineOnConnect: true,
+    generateHighQualityLinkPreview: true,
+    syncFullHistory: true,
+    getMessage: async (key) => {
+      let jid = jidNormalizedUser(key.remoteJid);
+      let msg = await store.loadMessage(jid, key.id);
+      return msg?.message || "";
+    },
+    msgRetryCounterCache,
+    defaultQueryTimeoutMs: undefined,
+  });
 
-    // ===============================
-    // 🔍 Mostrar QR escaneable en consola
-    // ===============================
-    XeonBotInc.ev.on("connection.update", (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        if (qr) {
-            console.log("\n📱 Escanea este código QR para vincular el bot con WhatsApp:\n");
-            qrcode.generate(qr, { small: true }); // 👈 Genera QR visual
-        }
-        if (connection === "open") {
-            console.log("✅ Bot conectado correctamente a WhatsApp");
-        } else if (connection === "close") {
-            console.log("❌ Conexión cerrada, intentando reconectar...");
-            startXeonBotInc();
-        }
-    });
+  // ===============================
+  // 🔍 Mostrar QR escaneable en consola (corregido sin bucles infinitos)
+  // ===============================
+  XeonBotInc.ev.on("connection.update", (update) => {
+    const { connection, lastDisconnect, qr } = update;
 
-    // ===============================
-    // 📩 Eventos principales
-    // ===============================
-    store.bind(XeonBotInc.ev);
-
-   XeonBotInc.ev.on('messages.upsert', async m => {
-    try {
-        const msg = m.messages[0];
-        if (!msg.message) return;
-
-        let text = '';
-        if (msg.message.conversation) text = msg.message.conversation;
-        else if (msg.message.extendedTextMessage?.text) text = msg.message.extendedTextMessage.text;
-        else if (msg.message.imageMessage?.caption) text = msg.message.imageMessage.caption;
-
-        text = text.trim();
-
-        if (text.toLowerCase() === (comandoPrueba.prefix + comandoPrueba.name).toLowerCase()) {
-            await comandoPrueba.execute(XeonBotInc, msg);
-        }
-    } catch (err) {
-        console.error('Error en comandoPrueba:', err);
+    if (qr) {
+      console.clear();
+      console.log("\n📱 Escanea este código QR para vincular el bot con WhatsApp:\n");
+      qrcode.generate(qr, { small: true });
     }
-});
 
-    const comandoPrueba = require('./pluggins/comandoprueba.js');
-    XeonBotInc.ev.on('messages.upsert', async m => {
-        try {
-            const msg = m.messages[0];
-            if (!msg.message) return;
-            const text = msg.message?.conversation || '';
-            if (text.startsWith(comandoPrueba.prefix + comandoPrueba.name)) {
-                await comandoPrueba.execute(XeonBotInc, msg);
-            }
-        } catch (err) {
-            console.error('Error en comandoPrueba:', err);
-        }
-    });
+    if (connection === "open") {
+      console.log("✅ Bot conectado correctamente a WhatsApp");
+    } else if (connection === "close") {
+      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+      if (shouldReconnect) {
+        console.log("🔄 Reconectando a WhatsApp...");
+        setTimeout(() => startXeonBotInc(), 5000);
+      } else {
+        console.log("🧹 Sesión inválida. Eliminando carpeta session...");
+        fs.rmSync('./session', { recursive: true, force: true });
+        console.log("🔁 Reinicia el bot para generar un nuevo código QR.");
+        process.exit(1);
+      }
+    }
+  });
 
-    const bienvenida = require('./pluggins/bienvenida.js');
+  // ===============================
+  // 📩 Eventos principales
+  // ===============================
+  store.bind(XeonBotInc.ev);
 
-startXeonBotInc().then((XeonBotInc) => {
+  const comandoPrueba = require('./pluggins/comandoprueba.js');
+  XeonBotInc.ev.on('messages.upsert', async m => {
+    try {
+      const msg = m.messages[0];
+      if (!msg.message) return;
+
+      let text = '';
+      if (msg.message.conversation) text = msg.message.conversation;
+      else if (msg.message.extendedTextMessage?.text) text = msg.message.extendedTextMessage.text;
+      else if (msg.message.imageMessage?.caption) text = msg.message.imageMessage.caption;
+
+      text = text.trim();
+
+      if (text.startsWith(comandoPrueba.prefix + comandoPrueba.name)) {
+        await comandoPrueba.execute(XeonBotInc, msg);
+      }
+    } catch (err) {
+      console.error('Error en comandoPrueba:', err);
+    }
+  });
+
+  const bienvenida = require('./pluggins/bienvenida.js');
   bienvenida(XeonBotInc);
-});
 
+  XeonBotInc.ev.on('creds.update', saveCreds);
+  XeonBotInc.ev.on('group-participants.update', async (update) => {
+    await handleGroupParticipantUpdate(XeonBotInc, update);
+  });
 
-    XeonBotInc.ev.on('creds.update', saveCreds);
-    XeonBotInc.ev.on('group-participants.update', async (update) => {
-        await handleGroupParticipantUpdate(XeonBotInc, update);
-    });
+  XeonBotInc.public = true;
+  XeonBotInc.serializeM = (m) => smsg(XeonBotInc, m, store);
 
-    XeonBotInc.public = true;
-    XeonBotInc.serializeM = (m) => smsg(XeonBotInc, m, store);
-
-    return XeonBotInc;
+  return XeonBotInc;
 }
 
 // ===============================
 // ▶️ Ejecutar bot
 // ===============================
 startXeonBotInc().catch(error => {
-    console.error('❌ Error fatal:', error);
-    process.exit(1);
+  console.error('❌ Error fatal:', error);
+  process.exit(1);
 });
 
 process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err));
@@ -206,8 +200,8 @@ process.on('unhandledRejection', (err) => console.error('Unhandled Rejection:', 
 
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
-    fs.unwatchFile(file);
-    console.log(chalk.redBright(`Update ${__filename}`));
-    delete require.cache[file];
-    require(file);
+  fs.unwatchFile(file);
+  console.log(chalk.redBright(`Update ${__filename}`));
+  delete require.cache[file];
+  require(file);
 });
