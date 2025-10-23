@@ -1,17 +1,21 @@
-const bienvenida = async (XeonBotInc) => {
-  XeonBotInc.ev.on('group-participants.update', async (update) => {
+// 📂 pluggins/bienvenida.js
+module.exports = (conn) => {
+  conn.ev.on('group-participants.update', async (update) => {
     try {
-      const { id, participants, action } = update; // id = grupo, participants = array de usuarios, action = 'add', 'remove', etc.
-      if (action === 'add') {
-        for (const user of participants) {
-          const texto = `👋 ¡Bienvenido/a @${user.split('@')[0]} al grupo! 🌟\nDisfruta del grupo y respeta las reglas.`;
-          await XeonBotInc.sendMessage(id, { text: texto, mentions: [user] });
+      if (update.action === 'add') {
+        for (const user of update.participants) {
+          const nombreGrupo = update.subject || 'el grupo';
+          const numero = user.id ? user.id.split('@')[0] : user.split('@')[0];
+          const texto = `👋 ¡Bienvenido/a @${numero} a *${nombreGrupo}*! 🌟\nDisfruta del grupo y respeta las reglas.`;
+
+          await conn.sendMessage(update.id, {
+            text: texto,
+            mentions: [user.id || user],
+          });
         }
       }
-    } catch (err) {
-      console.error('Error en bienvenida:', err);
+    } catch (error) {
+      console.error('Error en bienvenida:', error);
     }
   });
 };
-
-module.exports = bienvenida;
