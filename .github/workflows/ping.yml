@@ -1,13 +1,15 @@
-name: Keep Bot Alive
+name: 🟢 Keep Knight Bot Alive
 
 on:
   schedule:
-    - cron: "*/10 * * * *" # cada 10 minutos
-  workflow_dispatch: # también permite correr manualmente
+    - cron: "*/10 * * * *" # Ejecutar cada 10 minutos
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Render bot
-        run: curl -s https://mewley-mobil.onrender.com/ > /dev/null
+      - name: 🔗 Ping Render App
+        run: |
+          echo "Enviando ping a Render..."
+          curl -L --fail https://mewley-mobil.onrender.com/ || exit 1
