@@ -74,6 +74,22 @@ global.botname = "KNIGHT BOT";
 global.themeemoji = "•";
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 
+
+// ===============================
+// ⚠️ OPCIÓN 1: ELIMINAR CARPETA "session" AUTOMÁTICAMENTE AL INICIO
+// ===============================
+(() => {
+  const sessionPath = './session';
+  if (fs.existsSync(sessionPath)) {
+    fs.rmSync(sessionPath, { recursive: true, force: true });
+    console.log('🗑️ Carpeta "session" eliminada automáticamente (Opción 1 activa)');
+  }
+})();
+// ===============================
+// ⚠️ FIN OPCIÓN 1
+// ===============================
+
+
 // ===============================
 // 🚀 Función principal del bot
 // ===============================
@@ -130,15 +146,13 @@ async function startXeonBotInc() {
         const msg = m.messages[0];
         if (!msg.message) return;
 
-        // Detectar texto en diferentes tipos de mensajes
         let text = '';
         if (msg.message.conversation) text = msg.message.conversation;
         else if (msg.message.extendedTextMessage?.text) text = msg.message.extendedTextMessage.text;
         else if (msg.message.imageMessage?.caption) text = msg.message.imageMessage.caption;
 
-        text = text.trim(); // limpiar espacios
+        text = text.trim();
 
-        // Comando !hola
         if (text.toLowerCase() === (comandoPrueba.prefix + comandoPrueba.name).toLowerCase()) {
             await comandoPrueba.execute(XeonBotInc, msg);
         }
@@ -147,9 +161,6 @@ async function startXeonBotInc() {
     }
 });
 
-    // ===============================
-    // 🧩 Cargar comando de prueba
-    // ===============================
     const comandoPrueba = require('./pluggins/comandoprueba.js');
     XeonBotInc.ev.on('messages.upsert', async m => {
         try {
@@ -167,13 +178,10 @@ async function startXeonBotInc() {
     const bienvenida = require('./pluggins/bienvenida.js');
 
 startXeonBotInc().then((XeonBotInc) => {
-  bienvenida(XeonBotInc); // ⚡ Activar la función de bienvenida
+  bienvenida(XeonBotInc);
 });
 
 
-    // ===============================
-    // 🔄 Otros eventos
-    // ===============================
     XeonBotInc.ev.on('creds.update', saveCreds);
     XeonBotInc.ev.on('group-participants.update', async (update) => {
         await handleGroupParticipantUpdate(XeonBotInc, update);
