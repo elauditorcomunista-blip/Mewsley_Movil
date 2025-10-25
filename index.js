@@ -43,7 +43,6 @@ const {
 const NodeCache = require("node-cache");
 const pino = require("pino");
 const readline = require("readline");
-const { rmSync } = require('fs');
 
 const store = require('./lib/lightweight_store');
 store.readFromFile();
@@ -74,16 +73,28 @@ global.botname = "KNIGHT BOT";
 global.themeemoji = "•";
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 
-
-
-
-
 // ===============================
 // 🚀 Función principal del bot
 // ===============================
 async function startXeonBotInc() {
   let { version } = await fetchLatestBaileysVersion();
+
+  // ⚙️ Sesión local
   const { state, saveCreds } = await useMultiFileAuthState(`./session`);
+
+  // =====================================================
+  // 🧩 Cargar sesión desde variable si existe (modo gratuito)
+  // =====================================================
+  if (process.env.SESSION_DATA) {
+    try {
+      const restoredCreds = JSON.parse(process.env.SESSION_DATA);
+      Object.assign(state.creds, restoredCreds);
+      console.log('🔁 Sesión restaurada desde variable de entorno');
+    } catch (err) {
+      console.error('⚠️ No se pudo restaurar sesión desde variable:', err);
+    }
+  }
+
   const msgRetryCounterCache = new NodeCache();
 
   const XeonBotInc = makeWASocket({
@@ -108,7 +119,7 @@ async function startXeonBotInc() {
   });
 
   // ===============================
-  // 🔍 Mostrar QR escaneable en consola (corregido sin bucles infinitos)
+  // 🔍 Mostrar QR escaneable (solo una vez)
   // ===============================
   XeonBotInc.ev.on("connection.update", (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -164,7 +175,20 @@ async function startXeonBotInc() {
   const bienvenida = require('./pluggins/bienvenida.js');
   bienvenida(XeonBotInc);
 
-  XeonBotInc.ev.on('creds.update', saveCreds);
+  // =====================================================
+  // 💾 Guardado alternativo de sesión en variable (modo gratuito)
+  // =====================================================
+  XeonBotInc.ev.on('creds.update', async () => {
+    try {
+      await saveCreds();
+      const credsData = JSON.stringify(state.creds);
+      process.env.SESSION_DATA = credsData;
+      console.log('✅ Sesión guardada temporalmente en variable de entorno (modo gratuito)');
+    } catch (err) {
+      console.error('❌ Error al guardar sesión en variable de entorno:', err);
+    }
+  });
+
   XeonBotInc.ev.on('group-participants.update', async (update) => {
     await handleGroupParticipantUpdate(XeonBotInc, update);
   });
