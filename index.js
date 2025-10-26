@@ -27,7 +27,7 @@ const chalk = require('chalk');
 const FileType = require('file-type');
 const path = require('path');
 const axios = require('axios');
-const qrcode = require('qrcode-terminal'); // 👈 QR visual
+const qrcode = require('qrcode-terminal');
 const { handleMessages, handleGroupParticipantUpdate, handleStatus } = require('./main');
 const PhoneNumber = require('awesome-phonenumber');
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif');
@@ -79,22 +79,25 @@ const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 async function startXeonBotInc() {
   let { version } = await fetchLatestBaileysVersion();
 
-  // ⚙️ Sesión local
-  const { state, saveCreds } = await useMultiFileAuthState(`./session`);
+  // =====================================================
+  // 🧩 Crear carpeta de sesión si no existe
+  // =====================================================
+  if (!fs.existsSync('./session')) fs.mkdirSync('./session');
 
   // =====================================================
-  // 🧩 Cargar sesión desde variable si existe (modo gratuito)
+  // 🧩 Restaurar sesión desde variable de entorno (Render Free)
   // =====================================================
   if (process.env.SESSION_DATA) {
     try {
-      const restoredCreds = JSON.parse(process.env.SESSION_DATA);
-      Object.assign(state.creds, restoredCreds);
-      console.log('🔁 Sesión restaurada desde variable de entorno');
+      console.log('🔁 Restaurando sesión desde variable de entorno...');
+      const decoded = Buffer.from(process.env.SESSION_DATA, 'base64').toString('utf-8');
+      fs.writeFileSync('./session/creds.json', decoded);
     } catch (err) {
-      console.error('⚠️ No se pudo restaurar sesión desde variable:', err);
+      console.error('⚠️ Error al restaurar la sesión:', err);
     }
   }
 
+  const { state, saveCreds } = await useMultiFileAuthState(`./session`);
   const msgRetryCounterCache = new NodeCache();
 
   const XeonBotInc = makeWASocket({
@@ -119,7 +122,7 @@ async function startXeonBotInc() {
   });
 
   // ===============================
-  // 🔍 Mostrar QR escaneable (solo una vez)
+  // 🔍 Mostrar QR escaneable
   // ===============================
   XeonBotInc.ev.on("connection.update", (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -132,6 +135,16 @@ async function startXeonBotInc() {
 
     if (connection === "open") {
       console.log("✅ Bot conectado correctamente a WhatsApp");
+
+      // 💾 Guardar la sesión codificada para Render
+      try {
+        const sessionData = fs.readFileSync("./session/creds.json", "utf-8");
+        const encoded = Buffer.from(sessionData).toString("base64");
+        console.log("\n💾 Copia este texto y pégalo como variable de entorno SESSION_DATA en Render:\n");
+        console.log(encoded);
+      } catch (err) {
+        console.error("⚠️ No se pudo generar SESSION_DATA:", err);
+      }
     } else if (connection === "close") {
       const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
       if (shouldReconnect) {
@@ -176,14 +189,14 @@ async function startXeonBotInc() {
   bienvenida(XeonBotInc);
 
   // =====================================================
-  // 💾 Guardado alternativo de sesión en variable (modo gratuito)
+  // 💾 Guardado de sesión en variable de entorno (modo gratuito)
   // =====================================================
   XeonBotInc.ev.on('creds.update', async () => {
     try {
       await saveCreds();
-      const credsData = JSON.stringify(state.creds);
-      process.env.SESSION_DATA = credsData;
-      console.log('✅ Sesión guardada temporalmente en variable de entorno (modo gratuito)');
+      const credsData = fs.readFileSync('./session/creds.json', 'utf-8');
+      process.env.SESSION_DATA = Buffer.from(credsData).toString('base64');
+      console.log('✅ Sesión actualizada y almacenada temporalmente (Render Free)');
     } catch (err) {
       console.error('❌ Error al guardar sesión en variable de entorno:', err);
     }
